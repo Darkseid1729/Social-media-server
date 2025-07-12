@@ -1,6 +1,6 @@
 const corsOptions = {
   origin: [
-    "https://social-media-adi.vercel.app/",
+    "https://social-media-adi.vercel.app",
     process.env.CLIENT_URL,
 
   ],
