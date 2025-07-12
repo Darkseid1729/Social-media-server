@@ -3,6 +3,8 @@ const corsOptions = {
     "http://localhost:5173",
     "http://localhost:4173",
     process.env.CLIENT_URL,
+        "https://social-media-client-dc47xqmno-oryh143-gmailcoms-projects.vercel.app",
+
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
