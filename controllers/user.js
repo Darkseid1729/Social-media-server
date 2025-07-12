@@ -1,3 +1,15 @@
+// Get another user's public profile by ID
+const getUserProfile = TryCatch(async (req, res, next) => {
+  const { id } = req.params;
+  const user = await User.findById(id);
+  if (!user) return next(new ErrorHandler("User not found", 404));
+  // Only return public fields
+  const { _id, name, username, bio, avatar, createdAt } = user;
+  res.status(200).json({
+    success: true,
+    user: { _id, name, username, bio, avatar, createdAt },
+  });
+});
 import { compare } from "bcrypt";
 import { NEW_REQUEST, REFETCH_CHATS } from "../constants/events.js";
 import { getOtherMember } from "../lib/helper.js";
@@ -69,7 +81,7 @@ const getMyProfile = TryCatch(async (req, res, next) => {
 const logout = TryCatch(async (req, res) => {
   return res
     .status(200)
-    .cookie("chattu-token", "", { ...cookieOptions, maxAge: 0 })
+    .cookie("my-social-media-token", "", { ...cookieOptions, maxAge: 0 })
     .json({
       success: true,
       message: "Logged out successfully",
@@ -77,7 +89,9 @@ const logout = TryCatch(async (req, res) => {
 });
 
 const searchUser = TryCatch(async (req, res) => {
-  const { name = "" } = req.query;
+  // Previous v1: Partial match by name (commented out)
+  // const { name = "" } = req.query; //remove username(line below) if you want to search by name
+  const { username = "" } = req.query;
 
   // Finding All my chats
   const myChats = await Chat.find({ groupChat: false, members: req.user });
@@ -85,17 +99,24 @@ const searchUser = TryCatch(async (req, res) => {
   //  extracting All Users from my chats means friends or people I have chatted with
   const allUsersFromMyChats = myChats.flatMap((chat) => chat.members);
 
-  // Finding all users except me and my friends
+  // Previous v1: Partial match by username (commented out)
+  // const allUsersExceptMeAndFriends = await User.find({
+  //   _id: { $nin: allUsersFromMyChats },
+  //   username: { $regex: username, $options: "i" },
+  // });
+
+  // New: Exact match by username
   const allUsersExceptMeAndFriends = await User.find({
     _id: { $nin: allUsersFromMyChats },
-    name: { $regex: name, $options: "i" },
+    username: username,
   });
 
   // Modifying the response
-  const users = allUsersExceptMeAndFriends.map(({ _id, name, avatar }) => ({
+  const users = allUsersExceptMeAndFriends.map(({ _id, name, username, avatar }) => ({
     _id,
     name,
-    avatar: avatar.url,
+    username,
+    avatar: avatar?.url || "",
   }));
 
   return res.status(200).json({
@@ -180,9 +201,9 @@ const getMyNotifications = TryCatch(async (req, res) => {
   const allRequests = requests.map(({ _id, sender }) => ({
     _id,
     sender: {
-      _id: sender._id,
-      name: sender.name,
-      avatar: sender.avatar.url,
+      _id: sender?._id,
+      name: sender?.name || "Unknown User",
+      avatar: sender?.avatar?.url || "",
     },
   }));
 
@@ -204,11 +225,11 @@ const getMyFriends = TryCatch(async (req, res) => {
     const otherUser = getOtherMember(members, req.user);
 
     return {
-      _id: otherUser._id,
-      name: otherUser.name,
-      avatar: otherUser.avatar.url,
+      _id: otherUser?._id,
+      name: otherUser?.name || "Unknown User",
+      avatar: otherUser?.avatar?.url || "",
     };
-  });
+  }).filter(friend => friend._id); // Filter out any undefined friends
 
   if (chatId) {
     const chat = await Chat.findById(chatId);
@@ -239,4 +260,5 @@ export {
   newUser,
   searchUser,
   sendFriendRequest,
+  getUserProfile,
 };

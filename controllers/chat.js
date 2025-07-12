@@ -46,13 +46,25 @@ const getMyChats = TryCatch(async (req, res, next) => {
   const transformedChats = chats.map(({ _id, name, members, groupChat }) => {
     const otherMember = getOtherMember(members, req.user);
 
+    // Handle self-chat (user sent friend request to themselves)
+    if (!groupChat && !otherMember) {
+      const selfMember = members.find(member => member._id.toString() === req.user.toString());
+      return {
+        _id,
+        groupChat,
+        avatar: [selfMember?.avatar?.url || ""],
+        name: `${selfMember?.name || "You"} (Self)`,
+        members: [],
+      };
+    }
+
     return {
       _id,
       groupChat,
       avatar: groupChat
-        ? members.slice(0, 3).map(({ avatar }) => avatar.url)
-        : [otherMember.avatar.url],
-      name: groupChat ? name : otherMember.name,
+        ? members.slice(0, 3).map(({ avatar }) => avatar?.url || "")
+        : [otherMember?.avatar?.url || ""],
+      name: groupChat ? name : otherMember?.name || "Unknown User",
       members: members.reduce((prev, curr) => {
         if (curr._id.toString() !== req.user.toString()) {
           prev.push(curr._id);
@@ -79,7 +91,7 @@ const getMyGroups = TryCatch(async (req, res, next) => {
     _id,
     groupChat,
     name,
-    avatar: members.slice(0, 3).map(({ avatar }) => avatar.url),
+    avatar: members.slice(0, 3).map(({ avatar }) => avatar?.url || ""),
   }));
 
   return res.status(200).json({
@@ -279,7 +291,7 @@ const getChatDetails = TryCatch(async (req, res, next) => {
     chat.members = chat.members.map(({ _id, name, avatar }) => ({
       _id,
       name,
-      avatar: avatar.url,
+      avatar: avatar?.url || "",
     }));
 
     return res.status(200).json({

@@ -8,6 +8,6 @@ const corsOptions = {
   credentials: true,
 };
 
-const CHATTU_TOKEN = "chattu-token";
+const CHATTU_TOKEN = "my-social-media-token";
 
 export { corsOptions, CHATTU_TOKEN };

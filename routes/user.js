@@ -1,4 +1,6 @@
+import { getUserProfile } from "../controllers/user.js";
 import express from "express";
+import { updateAvatar } from "../controllers/avatar.js";
 import {
   acceptFriendRequest,
   getMyFriends,
@@ -27,14 +29,24 @@ app.post("/login", loginValidator(), validateHandler, login);
 
 // After here user must be logged in to access the routes
 
+
 app.use(isAuthenticated);
 
+// Update avatar
+app.put("/avatar", singleAvatar, updateAvatar);
+
 app.get("/me", getMyProfile);
+
+
 
 app.get("/logout", logout);
 
 app.get("/search", searchUser);
+app.get("/notifications", getMyNotifications);
+app.get("/friends", getMyFriends);
 
+// Get another user's public profile by ID
+app.get("/:id", getUserProfile);
 app.put(
   "/sendrequest",
   sendRequestValidator(),
@@ -49,8 +61,5 @@ app.put(
   acceptFriendRequest
 );
 
-app.get("/notifications", getMyNotifications);
-
-app.get("/friends", getMyFriends);
 
 export default app;
